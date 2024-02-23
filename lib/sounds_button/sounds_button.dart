@@ -1,5 +1,3 @@
-// ignore_for_file: avoid_print
-
 import 'dart:math';
 import 'dart:ui' as ui;
 
@@ -84,10 +82,10 @@ class _SoundsMessageButtonState extends State<SoundsMessageButton> {
         return RepaintBoundary(
           child: RecordingStatusMaskView(
             PolymerData(_soundsRecorder, widget.maskData),
-            onTextCancelSend: () {
+            onCancelSend: () {
               _removeMask();
             },
-            onTextVoiceSend: () {
+            onVoiceSend: () {
               widget.onSendSounds?.call(_soundsRecorder.path.value ?? '');
               _removeMask();
             },

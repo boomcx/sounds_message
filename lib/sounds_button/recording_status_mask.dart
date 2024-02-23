@@ -1,4 +1,3 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
 part of 'sounds_button.dart';
 
 class PolymerData {
@@ -32,22 +31,24 @@ class PolymerState extends InheritedWidget {
   }
 }
 
+const _duration = Duration(milliseconds: 220);
+
 class RecordingStatusMaskView extends StatelessWidget {
   const RecordingStatusMaskView(
     this.polymerData, {
     super.key,
-    this.onTextCancelSend,
-    this.onTextVoiceSend,
+    this.onCancelSend,
+    this.onVoiceSend,
     this.onTextSend,
   });
 
   final PolymerData polymerData;
 
   /// 取消发送
-  final VoidCallback? onTextCancelSend;
+  final VoidCallback? onCancelSend;
 
   /// 原音发送
-  final VoidCallback? onTextVoiceSend;
+  final VoidCallback? onVoiceSend;
 
   /// 文字发送
   final VoidCallback? onTextSend;
@@ -88,12 +89,12 @@ class RecordingStatusMaskView extends StatelessWidget {
                   Positioned(
                     bottom: data.sendAreaHeight + data.iconFocusSize / 3,
                     right: paddingSide + data.iconFocusSize + 45,
-                    child: _TextVoiceSend(onTextVoiceSend),
+                    child: _TextVoiceSend(onVoiceSend),
                   ),
                   Positioned(
                     bottom: data.sendAreaHeight + data.iconFocusSize / 3,
                     right: paddingSide + data.iconFocusSize + 45 * 4,
-                    child: _TextCancelSend(onTextCancelSend),
+                    child: _TextCancelSend(onCancelSend),
                   ),
                   _Bubble(
                     paddingSide: paddingSide,
@@ -276,7 +277,7 @@ class _Bubble extends StatelessWidget {
               20,
       // bottom: data.sendAreaHeight * 2 + data.iconFocusSize,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
+        duration: _duration,
         curve: Curves.easeInOut,
         margin: EdgeInsets.only(left: rect.left, right: rect.right, bottom: 0),
         // height: rect.height,
@@ -413,7 +414,7 @@ class _Circle extends StatelessWidget {
         ),
         // const SizedBox(height: 10),
         AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
+          duration: _duration,
           curve: Curves.easeInOut,
           margin: EdgeInsets.only(
             bottom: marginSide,

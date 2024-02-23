@@ -85,7 +85,7 @@ class SoundsRecorderController with AudioRecorderMixin {
   }) async {
     reset();
     // 额外添加首次授权时，不能开启录音
-    if (await _audioRecorder.hasPermission() == false) {
+    if (!await _audioRecorder.hasPermission()) {
       return;
     }
     if (!await _isEncoderSupported(config.encoder)) {

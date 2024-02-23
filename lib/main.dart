@@ -21,6 +21,8 @@ class MyApp extends StatelessWidget {
       builder: (_, child) {
         return MaterialApp(
           title: 'Flutter Demo',
+          // debugShowMaterialGrid: true,
+          // showSemanticsDebugger: true,
           debugShowCheckedModeBanner: false,
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
@@ -43,7 +45,11 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   final ScrollController _controller = ScrollController();
 
-  EdgeInsets _padding = EdgeInsets.zero;
+  // EdgeInsets _padding = EdgeInsets.zero;
+
+  final _key = GlobalKey();
+
+  final List<String> _items = List.generate(20, (index) => '测试 $index');
 
   @override
   void initState() {
@@ -61,31 +67,73 @@ class _MyHomePageState extends State<MyHomePage> {
               reverse: true,
               controller: _controller,
               itemBuilder: (context, index) {
-                return Text('$index xxxxxxxxxxxxxxxxxxxxxxxxxxxxx');
+                final isLeft = index % 2 == 0;
+                final color = isLeft ? Colors.yellow[200] : Colors.red[300];
+                return Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    textDirection:
+                        index % 2 == 0 ? TextDirection.ltr : TextDirection.rtl,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        height: 60,
+                        width: 60,
+                        decoration: BoxDecoration(
+                          color: color,
+                          borderRadius: BorderRadius.circular(100),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        constraints: BoxConstraints(
+                          maxWidth: ScreenUtil().screenWidth / 1.5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: color,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(_items[index]),
+                      ),
+                    ],
+                  ),
+                );
               },
-              itemCount: 100,
+              itemCount: _items.length,
             ),
           ),
-          AnimatedPadding(
-            padding: _padding,
-            duration: const Duration(milliseconds: 200),
+          // AnimatedPadding(
+          //   padding: _padding,
+          //   duration: const Duration(milliseconds: 200),
+          // ),
+          RecordingBotSpace(
+            statusKey: _key,
+            scrollController: _controller,
           ),
           SoundsMessageButton(
-            onChanged: (status) {
+            key: _key,
+            // onChanged: (status) {
+            // setState(() {
+            //   // 120 是遮罩层的视图高度
+            //   _padding = EdgeInsets.symmetric(
+            //       vertical: status == SoundsMessageStatus.initialized
+            //           ? 0
+            //           : (120 + 60 - (30 + 44) / 2) / 2 + 15);
+            // });
+            // _controller.animateTo(
+            //   0,
+            //   duration: const Duration(milliseconds: 200),
+            //   curve: Curves.easeOut,
+            // );
+            // },
+            onSendSounds: (content) {
               setState(() {
-                // 120 是遮罩层的视图高度
-                _padding = EdgeInsets.symmetric(
-                    vertical: status == SoundsMessageStatus.none
-                        ? 0
-                        : (120 + 70) / 2);
+                _items.insert(0, content);
               });
-              _controller.animateTo(
-                0,
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOut,
-              );
             },
           ),
+
           const SizedBox(height: 30),
         ],
       ),

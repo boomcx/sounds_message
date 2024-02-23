@@ -36,25 +36,11 @@ class _VoiceBubbleState extends State<VoiceBubble> {
         width: 160,
         child: Row(
           children: [
-            // ValueListenableBuilder(
-            //   valueListenable: _isPlaying,
-            //   builder: (context, value, child) {
-            //     if (value) {
-            //       return Text('data');
-            //     }
-            //     return Image.asset(
-            //       'assets/images/ic_voice.png',
-            //       width: 24,
-            //       fit: BoxFit.contain,
-            //     );
-            //   },
-            // ),
-            const SizedBox(width: 5),
             Container(
               color: Colors.grey.withOpacity(0.5),
               child: CustomPaint(
-                /// width * 1.5
-                size: const Size(20, 20),
+                // width * 1.5
+                size: const Size(16, 16),
                 painter: _VoicePlayPainter(),
               ),
             ),

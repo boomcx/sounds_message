@@ -7,11 +7,11 @@ class _RecordingPainter extends CustomPainter {
   _RecordingPainter(this.isFocus);
 
   @override
-  void paint(Canvas canvas, Size size) {
+  void paint(Canvas canvas, Size size) async {
     final bgOvalRect = Rect.fromCenter(
-        center: Offset(size.width / 2, size.height * 3.6 / 2),
-        width: size.width * 1.6,
-        height: size.height * 3.6);
+        center: Offset(size.width / 2, size.height * 3 / 2),
+        width: size.width * 1.8,
+        height: size.height * 3);
 
     final paint = Paint()
       ..color = const Color(0xff393939)
@@ -40,13 +40,16 @@ class _RecordingPainter extends CustomPainter {
                 const Color(0xff999999),
               ],
             ));
+
+      // canvas.drawImage(
+      //     await 'assets/images/ic_voice.png'.uiimage, Offset.zero, paint);
     } else {
       canvas.drawPath(path, paint);
     }
   }
 
   @override
-  bool shouldRepaint(_RecordingPainter oldDelegate) => false;
+  bool shouldRepaint(_RecordingPainter oldDelegate) => true;
 
   @override
   bool shouldRebuildSemantics(_RecordingPainter oldDelegate) => false;
@@ -69,7 +72,7 @@ class _BubblePainter extends CustomPainter {
       paint.color = const Color(0xfffa5251);
     }
 
-    final rect = const Offset(0, 0) & size;
+    final rect = Offset.zero & size;
     final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(12));
 
     final path = Path();
@@ -79,12 +82,13 @@ class _BubblePainter extends CustomPainter {
     // if (status == SoundsMessageStatus.canceling) {
     //   dx = paddingSide + data.iconFocusSize / 2 - 24;
     // } else
-    if (status == SoundsMessageStatus.textProcessing) {
-      dx = size.width - paddingSide + 24 - data.iconFocusSize / 2;
+    if (status == SoundsMessageStatus.textProcessing ||
+        status == SoundsMessageStatus.textProcessed) {
+      dx = size.width + 24 - paddingSide - data.iconFocusSize / 2;
     }
-    path.moveTo(dx - 8, size.height);
-    path.lineTo(dx, size.height + 7);
-    path.lineTo(dx + 8, size.height);
+    path.moveTo(dx - 7, size.height);
+    path.lineTo(dx, size.height + 6);
+    path.lineTo(dx + 7, size.height);
 
     // 矩形
     path.addRRect(rrect);
@@ -98,3 +102,11 @@ class _BubblePainter extends CustomPainter {
   @override
   bool shouldRebuildSemantics(_BubblePainter oldDelegate) => false;
 }
+
+// extension on String {
+//   Future<ui.Image> get uiimage async {
+//     final data = await rootBundle.load(this);
+//     return decodeImageFromList(data.buffer.asUint8List());
+//   }
+// }
+  

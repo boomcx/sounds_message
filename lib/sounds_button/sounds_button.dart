@@ -1,46 +1,26 @@
 // ignore_for_file: avoid_print
 
+import 'dart:math';
 import 'dart:ui' as ui;
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:sounds_message/utils/recorder.dart';
+import 'package:sounds_message/utils/data.dart';
+
+import 'wave.dart';
 
 part 'recording_status_mask.dart';
 part 'canvas.dart';
 
-enum SoundsMessageStatus {
-  /// 默认状态 为交互/交互完成
-  none,
-
-  /// 录制
-  recording,
-
-  /// 取消录制
-  canceling,
-
-  /// 语音转文字
-  textProcessing;
-
-  String get title {
-    switch (this) {
-      case none:
-        return '按住 说话';
-      case recording:
-        return '松开 发送';
-      case canceling:
-        return '松开 取消';
-      case textProcessing:
-        return '转文字';
-    }
-  }
-}
-
 class SoundsMessageButton extends StatefulWidget {
   const SoundsMessageButton({
     super.key,
+    this.maskData = const RecordingMaskOverlayData(),
     this.builder,
     this.onChanged,
-    this.maskData = const RecordingMaskOverlayData(),
+    this.onSendSounds,
   });
 
   /// 自定义发送按钮视图
@@ -52,6 +32,9 @@ class SoundsMessageButton extends StatefulWidget {
   /// 状态监听， 回调到外部自定义处理
   final Function(SoundsMessageStatus status)? onChanged;
 
+  /// 发送音频 / 发送音频文字
+  final Function(String path)? onSendSounds;
+
   /// 语音输入时遮罩配置
   final RecordingMaskOverlayData maskData;
 
@@ -61,7 +44,7 @@ class SoundsMessageButton extends StatefulWidget {
 
 class _SoundsMessageButtonState extends State<SoundsMessageButton> {
   /// 录音状态
-  final _status = ValueNotifier(SoundsMessageStatus.none);
+  // final _status = ValueNotifier(SoundsMessageStatus.none);
 
   /// 屏幕大小
   final scSize = Size(ScreenUtil().screenWidth, ScreenUtil().screenHeight);
@@ -69,20 +52,29 @@ class _SoundsMessageButtonState extends State<SoundsMessageButton> {
   /// 遮罩图层
   OverlayEntry? _entry;
 
+  /// 录音
+  final _soundsRecorder = SoundsRecorderController();
+
   @override
   void initState() {
     super.initState();
     // print(scSize);
-
-    _status.addListener(() {
-      widget.onChanged?.call(_status.value);
+    _soundsRecorder.status.addListener(() {
+      widget.onChanged?.call(_soundsRecorder.status.value);
     });
+  }
+
+  @override
+  void dispose() {
+    _soundsRecorder.reset();
+    super.dispose();
   }
 
   _removeMask() {
     if (_entry != null) {
       _entry!.remove();
       _entry = null;
+      _soundsRecorder.updateStatus(SoundsMessageStatus.initialized);
     }
   }
 
@@ -90,7 +82,21 @@ class _SoundsMessageButtonState extends State<SoundsMessageButton> {
     _entry = OverlayEntry(
       builder: (context) {
         return RepaintBoundary(
-          child: RecordingStatusMaskView(_status, widget.maskData),
+          child: RecordingStatusMaskView(
+            PolymerData(_soundsRecorder, widget.maskData),
+            onTextCancelSend: () {
+              _removeMask();
+            },
+            onTextVoiceSend: () {
+              widget.onSendSounds?.call(_soundsRecorder.path.value ?? '');
+              _removeMask();
+            },
+            onTextSend: () {
+              widget.onSendSounds
+                  ?.call(_soundsRecorder.textProcessedController.text);
+              _removeMask();
+            },
+          ),
         );
       },
     );
@@ -101,8 +107,70 @@ class _SoundsMessageButtonState extends State<SoundsMessageButton> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onLongPress: () {
-        _status.value = SoundsMessageStatus.recording;
+        _soundsRecorder.updateStatus(SoundsMessageStatus.recording);
         _showRecordingMask();
+        // 录制
+        _soundsRecorder.beginRec(
+          onStateChanged: (state) {
+            debugPrint('________  onStateChanged: $state ');
+          },
+          onAmplitudeChanged: (amplitude) {
+            debugPrint(
+                '________  onAmplitudeChanged: ${amplitude.current} , ${amplitude.max} ');
+          },
+          onDurationChanged: (time) {
+            debugPrint('________  onDurationChanged: $time ');
+          },
+          onCompleted: (path, time) {
+            // _removeMask();
+
+            debugPrint('________  onCompleted: $path , $time ');
+
+            if (time < 1) {
+              _removeMask();
+              showDialog(
+                context: context,
+                builder: (context) {
+                  return CupertinoAlertDialog(
+                    title: const Text('录制时间过短'),
+                    actions: [
+                      CupertinoDialogAction(
+                        child: const Text('确定'),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                    ],
+                  );
+                },
+              );
+              return;
+            }
+
+            // 录制状态松开/超过时长 直接发送语音内容
+            if (_soundsRecorder.status.value == SoundsMessageStatus.recording) {
+              widget.onSendSounds?.call(path!);
+              _removeMask();
+            }
+            // 取消发送
+            else if (_soundsRecorder.status.value ==
+                SoundsMessageStatus.canceling) {
+              _removeMask();
+            }
+            // 转文字时完成语音输入，则包含额外的选择操作
+            else if (_soundsRecorder.status.value ==
+                SoundsMessageStatus.textProcessing) {
+              _soundsRecorder.updateStatus(SoundsMessageStatus.textProcessed);
+              // _removeMask();
+            }
+
+            // 语音转文字结束状态，通过按钮触发具体的发送内容
+            // else if (_soundsRecorder.status.value ==
+            //     SoundsMessageStatus.textProcessed) {
+            //   // widget.onSendSounds?.call(path!);
+            // }
+          },
+        );
       },
       onLongPressMoveUpdate: (details) {
         final offset = details.globalPosition;
@@ -110,20 +178,20 @@ class _SoundsMessageButtonState extends State<SoundsMessageButton> {
             widget.maskData.sendAreaHeight) {
           final cancelOffset = offset.dx < scSize.width / 2;
           if (cancelOffset) {
-            _status.value = SoundsMessageStatus.canceling;
+            _soundsRecorder.updateStatus(SoundsMessageStatus.canceling);
           } else {
-            _status.value = SoundsMessageStatus.textProcessing;
+            _soundsRecorder.updateStatus(SoundsMessageStatus.textProcessing);
           }
         } else {
-          _status.value = SoundsMessageStatus.recording;
+          _soundsRecorder.updateStatus(SoundsMessageStatus.recording);
         }
       },
-      onLongPressEnd: (details) {
-        _status.value = SoundsMessageStatus.none;
-        _removeMask();
+      onLongPressEnd: (details) async {
+        // 手势结束音频
+        _soundsRecorder.endRec();
       },
       child: ValueListenableBuilder(
-        valueListenable: _status,
+        valueListenable: _soundsRecorder.status,
         builder: (context, value, child) {
           if (widget.builder != null) {
             return widget.builder?.call(context, value);
@@ -155,28 +223,47 @@ class _SoundsMessageButtonState extends State<SoundsMessageButton> {
   }
 }
 
-/// 语音输入是，聊天列表底部留白
-// class RecordingBottomSpace extends StatelessWidget {
-//   const RecordingBottomSpace({
-//     super.key,
-//     this.scrollController,
-//     required this.statusKey,
-//   });
+/// 语音输入，聊天列表底部留白
+class RecordingBotSpace extends StatelessWidget {
+  const RecordingBotSpace({
+    super.key,
+    this.scrollController,
+    required this.statusKey,
+  });
 
-//   final GlobalKey<State<SoundsMessageButton>> statusKey;
+  final GlobalKey statusKey;
 
-//   final ScrollController? scrollController;
+  final ScrollController? scrollController;
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return ValueListenableBuilder(
-//       valueListenable:
-//           (statusKey.currentState as _SoundsMessageButtonState)._status,
-//       builder: (context, value, child) => AnimatedPadding(
-//         padding: EdgeInsets.symmetric(
-//             vertical: value == SoundsMessageStatus.none ? 0 : (120 + 70) / 2),
-//         duration: const Duration(milliseconds: 200),
-//       ),
-//     );
-//   }
-// }
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder(
+      future: Future.delayed(Durations.extralong4, () => true),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const SizedBox();
+        }
+        return ValueListenableBuilder(
+          valueListenable: (statusKey.currentState as _SoundsMessageButtonState)
+              ._soundsRecorder
+              .status,
+          builder: (context, value, child) {
+            scrollController?.animateTo(
+              0,
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+            );
+            //
+            return AnimatedPadding(
+              padding: EdgeInsets.symmetric(
+                  vertical: value == SoundsMessageStatus.initialized
+                      ? 0
+                      : (120 + 70) / 2),
+              duration: const Duration(milliseconds: 200),
+            );
+          },
+        );
+      },
+    );
+  }
+}

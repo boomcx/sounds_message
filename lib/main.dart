@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sounds_message/sounds_button/sounds_button.dart';
+import 'package:sounds_message/utils/recorder.dart';
 
 void main() {
   runApp(const MyApp());
@@ -45,9 +46,9 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   final ScrollController _controller = ScrollController();
 
-  // EdgeInsets _padding = EdgeInsets.zero;
+  EdgeInsets _padding = EdgeInsets.zero;
 
-  final _key = GlobalKey();
+  // final _key = GlobalKey();
 
   final List<String> _items = List.generate(20, (index) => '测试 $index');
 
@@ -77,8 +78,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                        height: 60,
-                        width: 60,
+                        height: 50,
+                        width: 50,
                         decoration: BoxDecoration(
                           color: color,
                           borderRadius: BorderRadius.circular(100),
@@ -103,37 +104,36 @@ class _MyHomePageState extends State<MyHomePage> {
               itemCount: _items.length,
             ),
           ),
-          // AnimatedPadding(
-          //   padding: _padding,
-          //   duration: const Duration(milliseconds: 200),
-          // ),
-          RecordingBotSpace(
-            statusKey: _key,
-            scrollController: _controller,
+          AnimatedPadding(
+            padding: _padding,
+            duration: const Duration(milliseconds: 200),
           ),
+          // RecordingBotSpace(
+          //   statusKey: _key,
+          //   scrollController: _controller,
+          // ),
           SoundsMessageButton(
-            key: _key,
-            // onChanged: (status) {
-            // setState(() {
-            //   // 120 是遮罩层的视图高度
-            //   _padding = EdgeInsets.symmetric(
-            //       vertical: status == SoundsMessageStatus.initialized
-            //           ? 0
-            //           : (120 + 60 - (30 + 44) / 2) / 2 + 15);
-            // });
-            // _controller.animateTo(
-            //   0,
-            //   duration: const Duration(milliseconds: 200),
-            //   curve: Curves.easeOut,
-            // );
-            // },
+            // key: _key,
+            onChanged: (status) {
+              setState(() {
+                // 120 是遮罩层的视图高度
+                _padding = EdgeInsets.symmetric(
+                    vertical: status == SoundsMessageStatus.initialized
+                        ? 0
+                        : (120 + 60 - (30 + 44) / 2) / 2 + 15);
+              });
+              _controller.animateTo(
+                0,
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOut,
+              );
+            },
             onSendSounds: (content) {
               setState(() {
                 _items.insert(0, content);
               });
             },
           ),
-
           const SizedBox(height: 30),
         ],
       ),

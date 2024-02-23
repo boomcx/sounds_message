@@ -37,7 +37,6 @@ dependencies:
   flutter_screenutil: ^5.9.0
   path:
   path_provider:
-  eval_ex: ^1.1.8
   record: ^5.0.4
   # audioplayers: ^5.2.1
 

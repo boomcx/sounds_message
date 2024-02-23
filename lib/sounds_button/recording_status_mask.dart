@@ -323,13 +323,19 @@ class AmpContent extends StatelessWidget {
 }
 
 /// 文字输入和振幅动画
-class _TextProcessedContent extends StatelessWidget {
+class _TextProcessedContent extends StatefulWidget {
   const _TextProcessedContent();
+
+  @override
+  State<_TextProcessedContent> createState() => _TextProcessedContentState();
+}
+
+class _TextProcessedContentState extends State<_TextProcessedContent> {
+  final focusNode = FocusNode();
 
   @override
   Widget build(BuildContext context) {
     final polymerState = PolymerState.of(context);
-    final focusNode = FocusNode();
 
     return GestureDetector(
       behavior: HitTestBehavior.translucent,

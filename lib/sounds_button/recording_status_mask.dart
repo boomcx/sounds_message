@@ -317,13 +317,16 @@ class AmpContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final polymerState = PolymerState.of(context);
-
-    return ValueListenableBuilder(
-      valueListenable: polymerState.controller.amplitudeList,
-      builder: (context, value, child) {
-        return SoundsAmplitudes(value);
-      },
+    return CustomPaint(
+      painter: WavePainter(polymerState.controller.amplitudeList),
     );
+
+    // return ValueListenableBuilder(
+    //   valueListenable: polymerState.controller.amplitudeList,
+    //   builder: (context, value, child) {
+    //     return SoundsAmplitudes(value);
+    //   },
+    // );
   }
 }
 

@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
         return MaterialApp(
           title: 'Flutter Demo',
           // debugShowMaterialGrid: true,
-          // showSemanticsDebugger: true,
+          // showPerformanceOverlay: true,
           debugShowCheckedModeBanner: false,
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
@@ -46,13 +46,86 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  final List<String> _items = List.generate(15, (index) => '文字内容 $index');
   final ScrollController _controller = ScrollController();
 
-  EdgeInsets _padding = EdgeInsets.zero;
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xfff2f2f2),
+      resizeToAvoidBottomInset: false,
+      body: VoiceChatView(
+        scrollController: _controller,
+        onSendSounds: (content) {
+          // 最好局部刷新
+          setState(() {
+            _items.insert(0, content);
+          });
+        },
+        child: ListView.builder(
+          reverse: true,
+          controller: _controller,
+          itemBuilder: (context, index) {
+            final isLeft = index % 2 == 0;
+            final color = isLeft ? Colors.yellow[200] : Colors.red[300];
+            return Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                textDirection:
+                    index % 2 == 0 ? TextDirection.ltr : TextDirection.rtl,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    height: 50,
+                    width: 50,
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    constraints: BoxConstraints(
+                      maxWidth: ScreenUtil().screenWidth / 1.5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(_items[index]),
+                  ),
+                ],
+              ),
+            );
+          },
+          itemCount: _items.length,
+        ),
+      ),
+    );
+  }
+}
 
-  // final _key = GlobalKey();
+class VoiceChatView extends StatefulWidget {
+  const VoiceChatView({
+    super.key,
+    this.scrollController,
+    required this.child,
+    required this.onSendSounds,
+  });
 
-  final List<String> _items = List.generate(20, (index) => '测试 $index');
+  final Widget child;
+
+  final ScrollController? scrollController;
+
+  final ValueChanged<String> onSendSounds;
+
+  @override
+  State<VoiceChatView> createState() => _VoiceChatViewState();
+}
+
+class _VoiceChatViewState extends State<VoiceChatView> {
+  final _padding = ValueNotifier(EdgeInsets.zero);
 
   @override
   void initState() {
@@ -61,82 +134,36 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xfff2f2f2),
-      body: Column(
+    return SafeArea(
+      top: false,
+      bottom: false,
+      child: Column(
         children: [
-          Expanded(
-            child: ListView.builder(
-              reverse: true,
-              controller: _controller,
-              itemBuilder: (context, index) {
-                final isLeft = index % 2 == 0;
-                final color = isLeft ? Colors.yellow[200] : Colors.red[300];
-                return Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    textDirection:
-                        index % 2 == 0 ? TextDirection.ltr : TextDirection.rtl,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        height: 50,
-                        width: 50,
-                        decoration: BoxDecoration(
-                          color: color,
-                          borderRadius: BorderRadius.circular(100),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        constraints: BoxConstraints(
-                          maxWidth: ScreenUtil().screenWidth / 1.5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: color,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(_items[index]),
-                      ),
-                    ],
-                  ),
-                );
-              },
-              itemCount: _items.length,
+          Expanded(child: widget.child),
+          ValueListenableBuilder(
+            valueListenable: _padding,
+            builder: (context, value, child) => AnimatedPadding(
+              padding: value,
+              duration: const Duration(milliseconds: 200),
             ),
           ),
-          AnimatedPadding(
-            padding: _padding,
-            duration: const Duration(milliseconds: 200),
-          ),
-          // RecordingBotSpace(
-          //   statusKey: _key,
-          //   scrollController: _controller,
-          // ),
           SoundsMessageButton(
             // key: _key,
             onChanged: (status) {
-              setState(() {
-                // 120 是遮罩层的视图高度
-                _padding = EdgeInsets.symmetric(
-                    vertical: status == SoundsMessageStatus.initialized
-                        ? 0
-                        : (120 + 60 - (30 + 44) / 2) / 2 + 15);
-              });
-              _controller.animateTo(
+              // 120 是遮罩层的视图高度
+              _padding.value = EdgeInsets.symmetric(
+                  vertical: status == SoundsMessageStatus.initialized
+                      ? 0
+                      : (120 + 60 - (30 + 44) / 2) / 2 + 15);
+              widget.scrollController?.animateTo(
                 0,
                 duration: const Duration(milliseconds: 200),
                 curve: Curves.easeOut,
               );
             },
-            onSendSounds: (content) {
-              setState(() {
-                _items.insert(0, content);
-              });
-            },
+            onSendSounds: widget.onSendSounds,
           ),
-          const SizedBox(height: 30),
+          const SizedBox(height: 20),
         ],
       ),
     );

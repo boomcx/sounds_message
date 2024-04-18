@@ -1,3 +1,6 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
+// ignore_for_file: avoid_print
+
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
@@ -40,8 +43,19 @@ enum SoundsMessageStatus {
 
 /// 录音类
 class SoundsRecorderController with AudioRecorderMixin {
+  /// 录音配置
+  final RecordConfig config;
+
+  SoundsRecorderController({
+    this.config =
+        const RecordConfig(encoder: AudioEncoder.aacLc, numChannels: 1),
+  });
+
   /// 修改语音转文字的内容
   final TextEditingController textProcessedController = TextEditingController();
+
+  /// 是否完成了语音转文字的操作
+  bool isTranslated = false;
 
   /// 音频地址
   final path = ValueNotifier<String?>('');
@@ -65,11 +79,14 @@ class SoundsRecorderController with AudioRecorderMixin {
 
   Completer<String?>? _stopCompleter;
 
+  /// 开始录制前就已经结束
+  /// 用于录音还未开始，用户就已经松开手指结束录制的特殊情况
+  //  bool beforeEnd = false;
+  /// 用途同上
+  late Function(String? path, int time) _onAllCompleted;
+
   /// 录制
   beginRec({
-    RecordConfig config =
-        const RecordConfig(encoder: AudioEncoder.aacLc, numChannels: 1),
-
     /// 录制状态
     ValueChanged<RecordState>? onStateChanged,
 
@@ -80,19 +97,24 @@ class SoundsRecorderController with AudioRecorderMixin {
     ValueChanged<int>? onDurationChanged,
 
     /// 结束录制
-    /// 方便录制时长超过60s时，自动断开的处理
+    /// 录制时长超过60s时，自动断开的处理
     required Function(String? path, int time) onCompleted,
   }) async {
     reset();
-    // 额外添加首次授权时，不能开启录音
-    if (!await _audioRecorder.hasPermission()) {
-      return;
-    }
-    if (!await _isEncoderSupported(config.encoder)) {
-      return;
-    }
 
     _stopCompleter = Completer();
+    _onAllCompleted = onCompleted;
+
+    updateStatus(SoundsMessageStatus.recording);
+
+    // 记录时间
+    _timer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
+      duration.value++;
+      if (duration.value >= 60) {
+        endRec();
+      }
+      onDurationChanged?.call(duration.value);
+    });
 
     // 录制状态
     _recordSub = _audioRecorder.onStateChanged().listen((recordState) async {
@@ -108,7 +130,7 @@ class SoundsRecorderController with AudioRecorderMixin {
 
     // 音频振幅
     _amplitudeSub = _audioRecorder
-        .onAmplitudeChanged(const Duration(milliseconds: 60))
+        .onAmplitudeChanged(const Duration(milliseconds: 110))
         .listen((amp) {
       // print(20 * log10(amp.current / amp.max));
       amplitude.value = amp;
@@ -119,23 +141,16 @@ class SoundsRecorderController with AudioRecorderMixin {
       onAmplitudeChanged?.call(amp);
     });
 
-    // 记录时间
-    _timer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
-      duration.value++;
-      if (duration.value >= 60) {
-        endRec();
-      }
-      onDurationChanged?.call(duration.value);
-    });
-
     await recordFile(_audioRecorder, config);
   }
 
   /// 停止录音
   Future endRec() async {
-    // final res = await _audioRecorder.isRecording();
-    if (_stopCompleter != null) {
+    if (_stopCompleter != null && await _audioRecorder.isRecording()) {
       _stopCompleter?.complete(_audioRecorder.stop());
+    } else {
+      _onAllCompleted(null, 0);
+      reset();
     }
   }
 
@@ -149,20 +164,26 @@ class SoundsRecorderController with AudioRecorderMixin {
     duration.value = 0;
     amplitude.value = Amplitude(current: 0, max: 1);
     amplitudeList.value = [];
+    isTranslated = false;
   }
 
-  Future<bool> _isEncoderSupported(AudioEncoder encoder) async {
+  /// 权限
+  Future<bool> hasPermission() {
+    return _audioRecorder.hasPermission();
+  }
+
+  Future<bool> isEncoderSupported() async {
     final isSupported = await _audioRecorder.isEncoderSupported(
-      encoder,
+      config.encoder,
     );
 
     if (!isSupported) {
-      debugPrint('${encoder.name} is not supported on this platform.');
+      debugPrint('${config.encoder.name} is not supported on this platform.');
       debugPrint('Supported encoders are:');
 
       for (final e in AudioEncoder.values) {
         if (await _audioRecorder.isEncoderSupported(e)) {
-          debugPrint('- ${encoder.name}');
+          debugPrint('- ${config.encoder.name}');
         }
       }
     }
@@ -173,6 +194,12 @@ class SoundsRecorderController with AudioRecorderMixin {
   /// 更新状态
   updateStatus(SoundsMessageStatus value) {
     status.value = value;
+  }
+
+  /// 语音转文字
+  void updateTextProcessed(String text) {
+    isTranslated = true;
+    textProcessedController.text = text;
   }
 }
 
@@ -193,15 +220,12 @@ mixin AudioRecorderMixin {
 
     stream.listen(
       (data) {
-        // ignore: avoid_print
         print(
           recorder.convertBytesToInt16(Uint8List.fromList(data)),
         );
         file.writeAsBytesSync(data, mode: FileMode.append);
       },
-      // ignore: avoid_print
       onDone: () {
-        // ignore: avoid_print
         print('End of stream. File written to $path.');
       },
     );

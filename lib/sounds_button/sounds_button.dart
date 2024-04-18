@@ -31,7 +31,7 @@ class SoundsMessageButton extends StatefulWidget {
   final Function(SoundsMessageStatus status)? onChanged;
 
   /// 发送音频 / 发送音频文字
-  final Function(String path)? onSendSounds;
+  final Function(String content)? onSendSounds;
 
   /// 语音输入时遮罩配置
   final RecordingMaskOverlayData maskData;
@@ -104,9 +104,20 @@ class _SoundsMessageButtonState extends State<SoundsMessageButton> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onLongPress: () {
-        _soundsRecorder.updateStatus(SoundsMessageStatus.recording);
+      onLongPress: () async {
+        // 额外添加首次授权时，不能开启录音
+        if (!await _soundsRecorder.hasPermission()) {
+          return;
+        }
+
+        // 是否支持录音配置
+        if (!await _soundsRecorder.isEncoderSupported()) {
+          return;
+        }
+
+        // 显示语音输入UI
         _showRecordingMask();
+
         // 录制
         _soundsRecorder.beginRec(
           onStateChanged: (state) {

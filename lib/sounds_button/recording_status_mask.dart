@@ -79,9 +79,13 @@ class RecordingStatusMaskView extends StatelessWidget {
                       data: data,
                       onTap: onTextSend,
                       onLoading: () async {
-                        await Future.delayed(Durations.extralong4);
-                        polymerData.controller.textProcessedController.text =
-                            '我是语音转文字内容';
+                        /// 没有文字内容时，进行语音转文字操作
+                        if (!polymerData.controller.isTranslated) {
+                          await Future.delayed(Durations.extralong4);
+
+                          polymerData.controller
+                              .updateTextProcessed('我是语音转文字内容');
+                        }
                         return true;
                       },
                     ),

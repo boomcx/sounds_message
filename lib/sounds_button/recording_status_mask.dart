@@ -3,6 +3,7 @@ part of 'sounds_button.dart';
 class PolymerData {
   PolymerData(this.controller, this.data);
 
+  /// 逻辑处理
   final SoundsRecorderController controller;
 
   /// 语音输入时遮罩配置
@@ -26,7 +27,6 @@ class PolymerState extends InheritedWidget {
 
   @override
   bool updateShouldNotify(covariant PolymerState oldWidget) {
-    TextTheme;
     return oldWidget.data != data;
   }
 }
@@ -201,7 +201,6 @@ class _MaskStackView extends StatelessWidget {
       child: Stack(alignment: Alignment.bottomCenter, children: [
         Positioned(
           child: Container(
-            // color: Colors.red,
             decoration: const BoxDecoration(
                 gradient: LinearGradient(
               begin: Alignment.bottomCenter,
@@ -241,6 +240,7 @@ class _Bubble extends StatelessWidget {
   });
 
   final double paddingSide;
+  
 
   @override
   Widget build(BuildContext context) {
@@ -423,12 +423,7 @@ class _Circle extends StatelessWidget {
         AnimatedContainer(
           duration: _duration,
           curve: Curves.easeInOut,
-          margin: EdgeInsets.only(
-            bottom: marginSide,
-            left: marginSide,
-            right: marginSide,
-            top: marginSide,
-          ),
+          margin: EdgeInsets.all(marginSide),
           width: size,
           height: size,
           alignment: Alignment.center,
@@ -510,12 +505,7 @@ class _TextProcessedCircle extends StatelessWidget {
             }
           },
           child: Container(
-            margin: EdgeInsets.only(
-              bottom: marginSide,
-              left: marginSide,
-              right: marginSide,
-              top: marginSide,
-            ),
+            margin: EdgeInsets.all(marginSide),
             width: size,
             height: size,
             alignment: Alignment.center,

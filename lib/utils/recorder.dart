@@ -12,7 +12,7 @@ import 'package:record/record.dart';
 
 enum SoundsMessageStatus {
   /// 默认状态 未交互/交互完成
-  initialized,
+  none,
 
   /// 录制
   recording,
@@ -28,7 +28,7 @@ enum SoundsMessageStatus {
 
   String get title {
     switch (this) {
-      case initialized:
+      case none:
         return '按住 说话';
       case recording:
         return '松开 发送';
@@ -61,7 +61,7 @@ class SoundsRecorderController with AudioRecorderMixin {
   final path = ValueNotifier<String?>('');
 
   /// 录音操作的状态
-  final status = ValueNotifier(SoundsMessageStatus.initialized);
+  final status = ValueNotifier(SoundsMessageStatus.none);
 
   /// 当前区间间隔的音频振幅
   final amplitude = ValueNotifier<Amplitude>(Amplitude(current: 0, max: 1));

@@ -9,7 +9,6 @@ import 'package:sounds_message/utils/data.dart';
 
 import 'wave.dart';
 
-
 part 'recording_status_mask.dart';
 part 'canvas.dart';
 
@@ -73,7 +72,7 @@ class _SoundsMessageButtonState extends State<SoundsMessageButton> {
     if (_entry != null) {
       _entry!.remove();
       _entry = null;
-      _soundsRecorder.updateStatus(SoundsMessageStatus.initialized);
+      _soundsRecorder.updateStatus(SoundsMessageStatus.none);
     }
   }
 
@@ -234,46 +233,46 @@ class _SoundsMessageButtonState extends State<SoundsMessageButton> {
 }
 
 /// 语音输入，聊天列表底部留白
-class RecordingBotSpace extends StatelessWidget {
-  const RecordingBotSpace({
-    super.key,
-    this.scrollController,
-    required this.statusKey,
-  });
+// class RecordingBotSpace extends StatelessWidget {
+//   const RecordingBotSpace({
+//     super.key,
+//     this.scrollController,
+//     required this.statusKey,
+//   });
 
-  final GlobalKey statusKey;
+//   final GlobalKey statusKey;
 
-  final ScrollController? scrollController;
+//   final ScrollController? scrollController;
 
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder(
-      future: Future.delayed(Durations.extralong4, () => true),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const SizedBox();
-        }
-        return ValueListenableBuilder(
-          valueListenable: (statusKey.currentState as _SoundsMessageButtonState)
-              ._soundsRecorder
-              .status,
-          builder: (context, value, child) {
-            scrollController?.animateTo(
-              0,
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeOut,
-            );
-            //
-            return AnimatedPadding(
-              padding: EdgeInsets.symmetric(
-                  vertical: value == SoundsMessageStatus.initialized
-                      ? 0
-                      : (120 + 70) / 2),
-              duration: const Duration(milliseconds: 200),
-            );
-          },
-        );
-      },
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return FutureBuilder(
+//       future: Future.delayed(Durations.extralong4, () => true),
+//       builder: (context, snapshot) {
+//         if (!snapshot.hasData) {
+//           return const SizedBox();
+//         }
+//         return ValueListenableBuilder(
+//           valueListenable: (statusKey.currentState as _SoundsMessageButtonState)
+//               ._soundsRecorder
+//               .status,
+//           builder: (context, value, child) {
+//             scrollController?.animateTo(
+//               0,
+//               duration: const Duration(milliseconds: 200),
+//               curve: Curves.easeOut,
+//             );
+//             //
+//             return AnimatedPadding(
+//               padding: EdgeInsets.symmetric(
+//                   vertical:
+//                       value == SoundsMessageStatus.none ? 0 : (120 + 70) / 2),
+//               duration: const Duration(milliseconds: 200),
+//             );
+//           },
+//         );
+//       },
+//     );
+//   }
+// }
+// 

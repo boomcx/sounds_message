@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
           title: 'Flutter Demo',
           // debugShowMaterialGrid: true,
           // showPerformanceOverlay: true,
-          debugShowCheckedModeBanner: false,
+          // debugShowCheckedModeBanner: false,
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
             useMaterial3: true,
@@ -57,7 +57,7 @@ class _MyHomePageState extends State<MyHomePage> {
       body: VoiceChatView(
         scrollController: _controller,
         onSendSounds: (content) {
-          // 最好局部刷新
+          // 建议局部刷新
           setState(() {
             _items.insert(0, content);
           });
@@ -152,7 +152,7 @@ class _VoiceChatViewState extends State<VoiceChatView> {
             onChanged: (status) {
               // 120 是遮罩层的视图高度
               _padding.value = EdgeInsets.symmetric(
-                  vertical: status == SoundsMessageStatus.initialized
+                  vertical: status == SoundsMessageStatus.none
                       ? 0
                       : (120 + 60 - (30 + 44) / 2) / 2 + 15);
               widget.scrollController?.animateTo(

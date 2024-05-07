@@ -10,6 +10,12 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 
+enum SendContentType {
+  voice,
+
+  text,
+}
+
 enum SoundsMessageStatus {
   /// 默认状态 未交互/交互完成
   none,

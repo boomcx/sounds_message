@@ -56,7 +56,7 @@ class _MyHomePageState extends State<MyHomePage> {
       resizeToAvoidBottomInset: false,
       body: VoiceChatView(
         scrollController: _controller,
-        onSendSounds: (content) {
+        onSendSounds: (type, content) {
           // 建议局部刷新
           setState(() {
             _items.insert(0, content);
@@ -118,7 +118,7 @@ class VoiceChatView extends StatefulWidget {
 
   final ScrollController? scrollController;
 
-  final ValueChanged<String> onSendSounds;
+  final Function(SendContentType, String) onSendSounds;
 
   @override
   State<VoiceChatView> createState() => _VoiceChatViewState();

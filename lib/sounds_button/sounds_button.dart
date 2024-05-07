@@ -31,7 +31,7 @@ class SoundsMessageButton extends StatefulWidget {
   final Function(SoundsMessageStatus status)? onChanged;
 
   /// 发送音频 / 发送音频文字
-  final Function(String content)? onSendSounds;
+  final Function(SendContentType type, String content)? onSendSounds;
 
   /// 语音输入时遮罩配置
   final RecordingMaskOverlayData maskData;
@@ -86,12 +86,13 @@ class _SoundsMessageButtonState extends State<SoundsMessageButton> {
               _removeMask();
             },
             onVoiceSend: () {
-              widget.onSendSounds?.call(_soundsRecorder.path.value ?? '');
+              widget.onSendSounds?.call(
+                  SendContentType.voice, _soundsRecorder.path.value ?? '');
               _removeMask();
             },
             onTextSend: () {
-              widget.onSendSounds
-                  ?.call(_soundsRecorder.textProcessedController.text);
+              widget.onSendSounds?.call(SendContentType.text,
+                  _soundsRecorder.textProcessedController.text);
               _removeMask();
             },
           ),
@@ -158,7 +159,7 @@ class _SoundsMessageButtonState extends State<SoundsMessageButton> {
 
             // 录制状态松开/超过时长 直接发送语音内容
             if (_soundsRecorder.status.value == SoundsMessageStatus.recording) {
-              widget.onSendSounds?.call(path!);
+              widget.onSendSounds?.call(SendContentType.voice, path!);
               _removeMask();
             }
             // 取消发送

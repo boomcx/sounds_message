@@ -106,7 +106,6 @@ class _SoundsMessageButtonState extends State<SoundsMessageButton> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onLongPress: () async {
-        // 额外添加首次授权时，不能开启录音
         if (!await _soundsRecorder.hasPermission()) {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -118,6 +117,11 @@ class _SoundsMessageButtonState extends State<SoundsMessageButton> {
           }
           return;
         }
+
+        // 额外添加首次授权时，不能开启录音
+        // if (isFirstAuth) {
+        //   return;
+        // }
 
         // 是否支持录音配置
         if (!await _soundsRecorder.isEncoderSupported()) {
@@ -198,12 +202,13 @@ class _SoundsMessageButtonState extends State<SoundsMessageButton> {
         final offset = details.globalPosition;
         if ((scSize.height - offset.dy.abs()) >
             widget.maskData.sendAreaHeight) {
-          final cancelOffset = offset.dx < scSize.width / 2;
-          if (cancelOffset) {
-            _soundsRecorder.updateStatus(SoundsMessageStatus.canceling);
-          } else {
-            _soundsRecorder.updateStatus(SoundsMessageStatus.textProcessing);
-          }
+          //   final cancelOffset = offset.dx < scSize.width / 2;
+          //   if (cancelOffset) {
+          //     _soundsRecorder.updateStatus(SoundsMessageStatus.canceling);
+          //   } else {
+          //     _soundsRecorder.updateStatus(SoundsMessageStatus.textProcessing);
+          //   }
+          _soundsRecorder.updateStatus(SoundsMessageStatus.canceling);
         } else {
           _soundsRecorder.updateStatus(SoundsMessageStatus.recording);
         }

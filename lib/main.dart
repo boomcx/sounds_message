@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 // import 'package:flutter/rendering.dart';
 
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:sounds_message/sounds_button/sounds_button.dart';
+import 'package:sounds_message/sounds_button_single/sounds_button.dart';
 import 'package:sounds_message/utils/recorder.dart';
 
 void main() {

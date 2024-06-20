@@ -150,6 +150,7 @@ class _VoiceChatViewState extends State<VoiceChatView> {
           SoundsMessageButton(
             // key: _key,
             onChanged: (status) {
+              debugPrint(status.toString());
               // 120 是遮罩层的视图高度
               _padding.value = EdgeInsets.symmetric(
                   vertical: status == SoundsMessageStatus.none

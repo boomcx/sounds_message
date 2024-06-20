@@ -89,7 +89,7 @@ class SoundsRecorderController with AudioRecorderMixin {
   /// 用于录音还未开始，用户就已经松开手指结束录制的特殊情况
   //  bool beforeEnd = false;
   /// 用途同上
-  late Function(String? path, int time) _onAllCompleted;
+   Function(String? path, int time)? _onAllCompleted;
 
   /// 录制
   beginRec({
@@ -155,7 +155,7 @@ class SoundsRecorderController with AudioRecorderMixin {
     if (_stopCompleter != null && await _audioRecorder.isRecording()) {
       _stopCompleter?.complete(_audioRecorder.stop());
     } else {
-      _onAllCompleted(null, 0);
+      _onAllCompleted?.call(null, 0);
       reset();
     }
   }

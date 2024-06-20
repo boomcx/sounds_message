@@ -108,6 +108,15 @@ class _SoundsMessageButtonState extends State<SoundsMessageButton> {
       onLongPress: () async {
         // 额外添加首次授权时，不能开启录音
         if (!await _soundsRecorder.hasPermission()) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                behavior: SnackBarBehavior.floating,
+                margin: EdgeInsets.only(bottom: 200),
+                content: Text('未获取录音权限'),
+              ),
+            );
+          }
           return;
         }
 
@@ -183,6 +192,10 @@ class _SoundsMessageButtonState extends State<SoundsMessageButton> {
         );
       },
       onLongPressMoveUpdate: (details) {
+        // 录音状态下的手势移动处理
+        if (_soundsRecorder.status.value == SoundsMessageStatus.none) {
+          return;
+        }
         final offset = details.globalPosition;
         if ((scSize.height - offset.dy.abs()) >
             widget.maskData.sendAreaHeight) {

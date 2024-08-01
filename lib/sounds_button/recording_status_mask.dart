@@ -240,7 +240,6 @@ class _Bubble extends StatelessWidget {
   });
 
   final double paddingSide;
-  
 
   @override
   Widget build(BuildContext context) {
@@ -375,7 +374,7 @@ class _TextProcessedContentState extends State<_TextProcessedContent> {
             visible: polymerState.controller.status.value ==
                 SoundsMessageStatus.textProcessing,
             child: const Positioned(
-              right: 25,
+              right: 40,
               bottom: 5,
               child: AmpContent(),
             ),

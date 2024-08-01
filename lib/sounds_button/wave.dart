@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 // class SoundsAmplitudes extends StatelessWidget {
@@ -24,8 +26,8 @@ class WavePainter extends CustomPainter {
     const count = 13;
     const centerConut = count ~/ 2;
 
-    const lineSize = Size(2, 6);
-    const lineSpec = 2.0;
+    final lineSize = Size(3, size.height - 10);
+    const lineSpec = 3.0;
     const radius = Radius.circular(2);
 
     final center = Offset(size.width / 2, size.height / 2);
@@ -41,13 +43,20 @@ class WavePainter extends CustomPainter {
       ..color = Colors.grey
       ..style = PaintingStyle.fill;
 
+    final height = lineSize.height;
+
+    lineHeight(double scale) {
+      return height * min(max(scale * 1.5, 0.1), 1);
+    }
+
     // 中间值
     canvas.drawRRect(
         RRect.fromRectAndRadius(
           Rect.fromCenter(
-              center: center,
-              width: lineSize.width,
-              height: lineSize.height * (tempList[centerConut] * 4 + 1)),
+            center: center,
+            width: lineSize.width,
+            height: lineHeight(tempList[centerConut]),
+          ),
           radius,
         ),
         paint);
@@ -57,10 +66,11 @@ class WavePainter extends CustomPainter {
       canvas.drawRRect(
           RRect.fromRectAndRadius(
             Rect.fromCenter(
-                center: Offset(
-                    center.dx + (lineSize.width + lineSpec) * i, center.dy),
-                width: lineSize.width,
-                height: lineSize.height * (tempList[i] * 4 + 1)),
+              center: Offset(
+                  center.dx + (lineSize.width + lineSpec) * i, center.dy),
+              width: lineSize.width,
+              height: lineHeight(tempList[i]),
+            ),
             radius,
           ),
           paint);
@@ -68,10 +78,11 @@ class WavePainter extends CustomPainter {
       canvas.drawRRect(
           RRect.fromRectAndRadius(
             Rect.fromCenter(
-                center: Offset(
-                    center.dx - (lineSize.width + lineSpec) * i, center.dy),
-                width: lineSize.width,
-                height: lineSize.height * (tempList[i] * 4 + 1)),
+              center: Offset(
+                  center.dx - (lineSize.width + lineSpec) * i, center.dy),
+              width: lineSize.width,
+              height: lineHeight(tempList[i]),
+            ),
             radius,
           ),
           paint);

@@ -123,11 +123,6 @@ class _SoundsMessageButtonState extends State<SoundsMessageButton> {
         //   return;
         // }
 
-        // 是否支持录音配置
-        if (!await _soundsRecorder.isEncoderSupported()) {
-          return;
-        }
-
         // 显示语音输入UI
         _showRecordingMask();
 
@@ -137,18 +132,18 @@ class _SoundsMessageButtonState extends State<SoundsMessageButton> {
             debugPrint('________  onStateChanged: $state ');
           },
           onAmplitudeChanged: (amplitude) {
-            debugPrint(
-                '________  onAmplitudeChanged: ${amplitude.current} , ${amplitude.max} ');
+            // debugPrint(
+            //     '________  onAmplitudeChanged: ${amplitude.current} , ${amplitude.max} ');
           },
           onDurationChanged: (time) {
             debugPrint('________  onDurationChanged: $time ');
           },
-          onCompleted: (path, time) {
+          onCompleted: (path, duration) {
             // _removeMask();
 
-            debugPrint('________  onCompleted: $path , $time ');
+            debugPrint('________  onCompleted: $path , $duration ');
 
-            if (time < 1) {
+            if (duration.inSeconds < 1) {
               _removeMask();
               showDialog(
                 context: context,

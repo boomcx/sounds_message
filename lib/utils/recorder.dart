@@ -2,13 +2,10 @@
 // ignore_for_file: avoid_print
 
 import 'dart:async';
-import 'dart:io';
-import 'dart:typed_data';
 
+import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:flutter/material.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
-import 'package:record/record.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 enum SendContentType {
   voice,
@@ -48,14 +45,8 @@ enum SoundsMessageStatus {
 }
 
 /// 录音类
-class SoundsRecorderController with AudioRecorderMixin {
-  /// 录音配置
-  final RecordConfig config;
-
-  SoundsRecorderController({
-    this.config =
-        const RecordConfig(encoder: AudioEncoder.aacLc, numChannels: 1),
-  });
+class SoundsRecorderController {
+  SoundsRecorderController();
 
   /// 修改语音转文字的内容
   final TextEditingController textProcessedController = TextEditingController();
@@ -70,131 +61,107 @@ class SoundsRecorderController with AudioRecorderMixin {
   final status = ValueNotifier(SoundsMessageStatus.none);
 
   /// 当前区间间隔的音频振幅
-  final amplitude = ValueNotifier<Amplitude>(Amplitude(current: 0, max: 1));
+  // final amplitude = ValueNotifier<Amplitude>(Amplitude(current: 0, max: 1));
 
   /// 录音操作时间内的音频振幅集合，最新值在前
   /// [0.0 ~ 1.0]
   final amplitudeList = ValueNotifier<List<double>>([]);
 
-  final AudioRecorder _audioRecorder = AudioRecorder();
-  StreamSubscription<RecordState>? _recordSub;
-  StreamSubscription<Amplitude>? _amplitudeSub;
+  RecorderController? recorderController;
+  // StreamSubscription<RecordState>? _recordSub;
+  // StreamSubscription<Amplitude>? _amplitudeSub;
 
-  final duration = ValueNotifier<int>(0);
+  final duration = ValueNotifier<Duration>(Duration.zero);
   Timer? _timer;
-
-  Completer<String?>? _stopCompleter;
 
   /// 开始录制前就已经结束
   /// 用于录音还未开始，用户就已经松开手指结束录制的特殊情况
   //  bool beforeEnd = false;
   /// 用途同上
-   Function(String? path, int time)? _onAllCompleted;
+  Function(String? path, Duration duration)? _onAllCompleted;
 
   /// 录制
   beginRec({
     /// 录制状态
-    ValueChanged<RecordState>? onStateChanged,
+    ValueChanged<RecorderState>? onStateChanged,
 
     /// 音频振幅
-    ValueChanged<Amplitude>? onAmplitudeChanged,
+    ValueChanged<List<double>>? onAmplitudeChanged,
 
     /// 录制时间
-    ValueChanged<int>? onDurationChanged,
+    ValueChanged<Duration>? onDurationChanged,
 
     /// 结束录制
     /// 录制时长超过60s时，自动断开的处理
-    required Function(String? path, int time) onCompleted,
+    required Function(String? path, Duration duration) onCompleted,
   }) async {
-    reset();
+    try {
+      reset();
+      _onAllCompleted = onCompleted;
 
-    _stopCompleter = Completer();
-    _onAllCompleted = onCompleted;
+      recorderController = RecorderController()
+        ..androidEncoder = AndroidEncoder.aac
+        ..androidOutputFormat = AndroidOutputFormat.mpeg4
+        ..iosEncoder = IosEncoder.kAudioFormatMPEG4AAC
+        ..sampleRate = 44100;
 
-    updateStatus(SoundsMessageStatus.recording);
+      updateStatus(SoundsMessageStatus.recording);
 
-    // 记录时间
-    _timer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
-      duration.value++;
-      if (duration.value >= 60) {
-        endRec();
-      }
-      onDurationChanged?.call(duration.value);
-    });
+      // 录制状态
+      recorderController?.onRecorderStateChanged.listen((state) {
+        onStateChanged?.call(state);
+      });
 
-    // 录制状态
-    _recordSub = _audioRecorder.onStateChanged().listen((recordState) async {
-      onStateChanged?.call(recordState);
-      if (recordState == RecordState.stop) {
-        // 返回地址
-        path.value = await _stopCompleter?.future;
-        onCompleted.call(path.value, duration.value);
-        //
-        reset();
-      }
-    });
+      // 时间间隔
+      recorderController?.onCurrentDuration.listen((value) {
+        duration.value = value;
 
-    // 音频振幅
-    _amplitudeSub = _audioRecorder
-        .onAmplitudeChanged(const Duration(milliseconds: 110))
-        .listen((amp) {
-      // print(20 * log10(amp.current / amp.max));
-      amplitude.value = amp;
-      amplitudeList.value = [
-        (50 + amp.current) / 50,
-        ...amplitudeList.value,
-      ];
-      onAmplitudeChanged?.call(amp);
-    });
+        if (value.inSeconds >= 60) {
+          endRec();
+        }
 
-    await recordFile(_audioRecorder, config);
+        onDurationChanged?.call(value);
+
+        amplitudeList.value = recorderController!.waveData.reversed.toList();
+        print(duration);
+      });
+
+      // 录制
+      await recorderController!.record(); // Path is optional
+    } catch (e) {
+      debugPrint(e.toString());
+    } finally {}
   }
 
   /// 停止录音
   Future endRec() async {
-    if (_stopCompleter != null && await _audioRecorder.isRecording()) {
-      _stopCompleter?.complete(_audioRecorder.stop());
+    if (recorderController!.isRecording) {
+      path.value = await recorderController!.stop();
+
+      if (path.value?.isNotEmpty == true) {
+        debugPrint(path.value);
+        // debugPrint("Recorded file size: ${File(path.value!).lengthSync()}");
+      }
+
+      _onAllCompleted?.call(path.value, duration.value);
     } else {
-      _onAllCompleted?.call(null, 0);
-      reset();
+      _onAllCompleted?.call(null, Duration.zero);
     }
+    reset();
   }
 
   /// 重置
   reset() {
-    textProcessedController.clear();
-    _recordSub?.cancel();
-    _amplitudeSub?.cancel();
     _timer?.cancel();
-    _stopCompleter = null;
-    duration.value = 0;
-    amplitude.value = Amplitude(current: 0, max: 1);
-    amplitudeList.value = [];
-    isTranslated = false;
+    duration.value = Duration.zero;
+    recorderController?.dispose();
   }
 
   /// 权限
-  Future<bool> hasPermission() {
-    return _audioRecorder.hasPermission();
-  }
+  Future<bool> hasPermission() async {
+    final state = await Permission.microphone.request();
 
-  Future<bool> isEncoderSupported() async {
-    final isSupported = await _audioRecorder.isEncoderSupported(
-      config.encoder,
-    );
-
-    if (!isSupported) {
-      debugPrint('${config.encoder.name} is not supported on this platform.');
-      debugPrint('Supported encoders are:');
-
-      for (final e in AudioEncoder.values) {
-        if (await _audioRecorder.isEncoderSupported(e)) {
-          debugPrint('- ${config.encoder.name}');
-        }
-      }
-    }
-
-    return isSupported;
+    return state == PermissionStatus.granted;
   }
 
   /// 更新状态
@@ -206,42 +173,5 @@ class SoundsRecorderController with AudioRecorderMixin {
   void updateTextProcessed(String text) {
     isTranslated = true;
     textProcessedController.text = text;
-  }
-}
-
-/// 录音类扩展
-mixin AudioRecorderMixin {
-  Future<void> recordFile(AudioRecorder recorder, RecordConfig config) async {
-    final path = await _getPath();
-
-    await recorder.start(config, path: path);
-  }
-
-  Future<void> recordStream(AudioRecorder recorder, RecordConfig config) async {
-    final path = await _getPath();
-
-    final file = File(path);
-
-    final stream = await recorder.startStream(config);
-
-    stream.listen(
-      (data) {
-        print(
-          recorder.convertBytesToInt16(Uint8List.fromList(data)),
-        );
-        file.writeAsBytesSync(data, mode: FileMode.append);
-      },
-      onDone: () {
-        print('End of stream. File written to $path.');
-      },
-    );
-  }
-
-  Future<String> _getPath() async {
-    final dir = await getApplicationDocumentsDirectory();
-    return p.join(
-      dir.path,
-      'audio_${DateTime.now().millisecondsSinceEpoch}.m4a',
-    );
   }
 }
